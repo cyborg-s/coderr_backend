@@ -2,6 +2,23 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class UserProfile(models.Model):
+    """
+    Erweiterung des Django-Benutzermodells um zusätzliche Profilinformationen.
+
+    Attribute:
+        user (OneToOneField): Verbindung zum Django User.
+        first_name (str): Vorname des Nutzers (optional).
+        last_name (str): Nachname des Nutzers (optional).
+        user_type (str): Art des Nutzers (z. B. "Freelancer", "Kunde").
+        phone_number (str): Telefonnummer (optional).
+        address (str): Adresse (optional).
+        file (ImageField): Profilbild (optional).
+        location (str): Standortangabe (optional).
+        tel (str): Alternative Telefonnummer (optional).
+        description (str): Beschreibung oder Biografie (optional).
+        working_hours (str): Arbeitszeiten oder Verfügbarkeit (optional).
+        created_at (datetime): Erstellungszeitpunkt des Profils (automatisch gesetzt).
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
@@ -16,4 +33,7 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        """
+        Rückgabe des Benutzernamens zur Anzeige im Admin oder bei Debug-Ausgaben.
+        """
         return f"{self.user.username}'s profile"
