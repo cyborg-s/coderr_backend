@@ -17,14 +17,10 @@ def registration(request):
         "email": request.data.get("email"),
         "password": request.data.get("password")
     }
-
     user_serializer = UserSerializer(data=user_data)
     if user_serializer.is_valid():
         user = user_serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-
-        
-        
+        token, created = Token.objects.get_or_create(user=user)       
         profile = UserProfile.objects.create(
             user=user,
             first_name=request.data.get('first_name',''),
@@ -34,7 +30,6 @@ def registration(request):
             address=request.data.get('address', ''),
         )
         profile.save()
-
         return Response({
                 'token': token.key,
                 'username': user.username,
@@ -43,7 +38,6 @@ def registration(request):
             }, status=status.HTTP_201_CREATED)
     else:
         return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 @api_view(['POST'])

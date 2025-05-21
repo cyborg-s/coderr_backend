@@ -14,7 +14,3 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'business_user', 'customer_user', 'status', 'created_at', "product_name", "features",
             'offer_detail', 'title', 'delivery_time_in_days', 'revisions', 'price',
         ]
-
-
-
-

@@ -4,12 +4,10 @@ from rest_framework.authtoken.models import Token
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-
-
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
-
+        
     def create(self, validated_data):
         user = User(
             username=validated_data['username'],
@@ -19,20 +17,17 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
-
     def validate(self, data):
         user = User.objects.filter(username=data['username']).first()
         if user is None:
             raise serializers.ValidationError("Invalid credentials.")
-
         password_correct = user.check_password(data['password'])
-
         if not password_correct:
             raise serializers.ValidationError("Invalid credentials.")
-    
         token, created = Token.objects.get_or_create(user=user)
         return {
             'token': token.key,
