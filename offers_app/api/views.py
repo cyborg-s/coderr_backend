@@ -66,10 +66,11 @@ class OfferListView(ListCreateAPIView):
         Fügt zusätzliche Annotationen für Mindest- und Höchstpreis hinzu.
         """
         queryset = super().get_queryset()
-        return queryset.annotate(
+        queryset = queryset.annotate(
             min_price=Min('details__price'),
             max_price=Max('details__price')
         )
+        return queryset.order_by('id')
 
     def get_serializer_class(self):
         """

@@ -54,8 +54,6 @@ def registration(request):
             first_name=request.data.get('first_name', ''),
             last_name=request.data.get('last_name', ''),
             user_type=request.data.get('type'),
-            phone_number=request.data.get('phone_number', ''),
-            address=request.data.get('address', ''),
         )
 
         # Rückgabe der Authentifizierungsdaten

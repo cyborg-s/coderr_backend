@@ -104,7 +104,7 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         
         # Angebot mit dem authentifizierten User anlegen
-        offer = Offer.objects.create(user=user, **validated_data)
+        offer = Offer.objects.create( **validated_data)
         
         # Alle Details einzeln erstellen und dem Angebot zuordnen
         for detail_data in details_data:
