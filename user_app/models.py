@@ -28,7 +28,7 @@ class UserProfile(models.Model):
 
     # Kontaktinformationen (optional)
     tel = models.CharField(max_length=15, blank=True, null=True)  # Telefonnummer
-    location = models.TextField(blank=True, null=True)            # ausführliche Ortsbeschreibung
+    location = models.TextField(blank=True, default="")           # ausführliche Ortsbeschreibung
 
     # Weitere Profilinfos
     description = models.TextField(blank=True, null=True)         # Beschreibung des Users

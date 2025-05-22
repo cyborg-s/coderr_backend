@@ -45,16 +45,17 @@ class StandardResultsSetPagination(PageNumberPagination):
 # -------------------------------------------
 # Klassenbasierte View: Liste und Erstellen von Angeboten
 # -------------------------------------------
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
 class OfferListView(ListCreateAPIView):
     """
-    GET: Gibt eine Liste von Angeboten zurück (gefiltert, sortiert, paginiert).
-    POST: Erstellt ein neues Angebot (nur für Business-User erlaubt).
+    GET: Gibt eine Liste von Angeboten zurück (öffentlich).
+    POST: Erstellt ein neues Angebot (nur für authentifizierte Business-User).
     """
     queryset = Offer.objects.all().prefetch_related('details', 'user').annotate(
         annotated_min_price=Min('details__price'),
         annotated_min_delivery_time=Min('details__delivery_time_in_days')
     )
-    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = OfferFilter
@@ -62,38 +63,34 @@ class OfferListView(ListCreateAPIView):
     ordering_fields = ['updated_at', 'min_price', 'max_price']
 
     def get_queryset(self):
-        """
-        Fügt zusätzliche Annotationen für Mindest- und Höchstpreis hinzu.
-        """
         queryset = super().get_queryset()
-        queryset = queryset.annotate(
+        return queryset.annotate(
             min_price=Min('details__price'),
             max_price=Max('details__price')
-        )
-        return queryset.order_by('id')
+        ).order_by('id')
 
     def get_serializer_class(self):
-        """
-        Wählt den passenden Serializer basierend auf der HTTP-Methode.
-        """
         if self.request.method == 'POST':
             return OfferCreateSerializer
         return OfferListSerializer
 
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()]  # GET darf jeder aufrufen
+
     def perform_create(self, serializer):
-        """
-        Stellt sicher, dass nur Business-User Angebote erstellen können.
-        """
         user = self.request.user
         try:
             user_profile = UserProfile.objects.get(user_id=user.id)
         except UserProfile.DoesNotExist:
             raise PermissionDenied('User profile not found.')
-        
+
         if user_profile.user_type == 'customer':
             raise PermissionDenied('Only business users can create offers.')
 
         serializer.save(user=user)
+
 
 # -------------------------------------------
 # Funktionale View: Einzelnes Angebot abrufen, bearbeiten oder löschen

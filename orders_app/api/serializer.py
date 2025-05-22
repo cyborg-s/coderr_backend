@@ -10,6 +10,8 @@ class OrderSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(source='offer_detail.price', max_digits=10, decimal_places=2, read_only=True)
     # JSONField mit default list, falls features leer sein sollten
     features = serializers.JSONField(source='offer_detail.features', default=list, read_only=True)
+    offer_type = serializers.CharField(source='offer_detail.offer_type', read_only=True)
+    updated_at = serializers.DateTimeField(source='offer.updated_at', read_only=True)
 
     class Meta:
         model = Order
@@ -19,6 +21,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'customer_user',
             'status',
             'created_at',
+            'updated_at',
             'product_name',
             'features',
             'offer_detail',
@@ -26,4 +29,5 @@ class OrderSerializer(serializers.ModelSerializer):
             'delivery_time_in_days',
             'revisions',
             'price',
+            'offer_type',
         ]

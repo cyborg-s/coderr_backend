@@ -47,8 +47,8 @@ def user_profile(request, pk):
         # Falls Validierung fehlschlägt, Fehler zurückgeben
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def business_profiles(request):
     """
     API-Endpunkt zum Abrufen aller Business-UserProfile.
@@ -60,8 +60,8 @@ def business_profiles(request):
     serializer = UserProfileSerializer(profiles, many=True)
     return Response(serializer.data)
 
-
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def customer_profiles(request):
     """
     API-Endpunkt zum Abrufen aller Customer-UserProfile.

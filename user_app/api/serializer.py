@@ -27,7 +27,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.IntegerField(source='user.id', read_only=True)
     type = serializers.CharField(source='user_type')
     username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.CharField(source="user.email", read_only=True)
+    email = serializers.CharField(source="user.email")
 
     class Meta:
         model = UserProfile
@@ -41,7 +41,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'tel',
             'file',
             'location',
-            'email',      # User.email, read-only
+            'email',      
             'created_at',
             'description',
             'working_hours',
