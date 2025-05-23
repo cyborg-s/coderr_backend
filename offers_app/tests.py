@@ -8,36 +8,36 @@ from user_app.models import UserProfile
 
 class OfferApiTests(APITestCase):
     """
-    Testklasse für die API-Endpunkte rund um Angebote (Offers) und Angebotsdetails (OfferDetails).
+    Test class for the API endpoints related to Offers and OfferDetails.
 
-    Es werden verschiedene Szenarien getestet, darunter:
-    - Listen von Angeboten abrufen
-    - Angebote anlegen, ändern und löschen (nur für business Nutzer erlaubt)
-    - Zugriffskontrollen (keine Bearbeitung/Löschung für Kunden)
-    - Einzelnes Angebot und Angebotsdetails abrufen
+    Various scenarios are tested, including:
+    - Retrieving lists of offers
+    - Creating, updating, and deleting offers (allowed only for business users)
+    - Access control (no editing/deleting for customers)
+    - Retrieving single offer and offer details
     """
 
     def setUp(self):
         """
-        Vorbereitung der Testdaten:
-        - Erstellen eines Business-Users und eines Customer-Users mit entsprechenden UserProfiles
-        - Erstellen eines Beispielangebots mit zwei Angebotsdetails (Basic und Premium)
+        Prepare test data:
+        - Create a business user and a customer user with corresponding UserProfiles
+        - Create a sample offer with two offer details (Basic and Premium)
         """
-        # Business-User anlegen
+        # Create business user
         self.business_user = User.objects.create_user(username='businessuser', password='pass1234')
         UserProfile.objects.create(user=self.business_user, user_type='business')
 
-        # Kunden-User anlegen
+        # Create customer user
         self.customer_user = User.objects.create_user(username='customeruser', password='pass1234')
         UserProfile.objects.create(user=self.customer_user, user_type='customer')
 
-        # Beispiel-Angebot anlegen
+        # Create sample offer
         self.offer = Offer.objects.create(
             user=self.business_user,
             title='Test Offer',
-            description='Beschreibung Test',
+            description='Description Test',
         )
-        # Angebotsdetails anlegen (verschiedene Preisklassen/Features)
+        # Create offer details (different price tiers/features)
         self.detail1 = OfferDetail.objects.create(
             offer=self.offer,
             title='Basic',
@@ -59,9 +59,9 @@ class OfferApiTests(APITestCase):
 
     def test_list_offers_authenticated(self):
         """
-        Testet das Abrufen der Angebotsliste durch einen authentifizierten User.
-        Erwartet Status 200 und mindestens ein Angebot in den Ergebnissen.
-        Außerdem wird geprüft, ob der Titel, der minimale Preis und minimale Lieferzeit korrekt sind.
+        Tests retrieving the list of offers by an authenticated user.
+        Expects status 200 and at least one offer in the results.
+        Also checks if the title, minimum price, and minimum delivery time are correct.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('offerslist')
@@ -76,59 +76,59 @@ class OfferApiTests(APITestCase):
 
     def test_create_offer_as_business_user(self):
         """
-        Testet das Erstellen eines neuen Angebots durch einen Business-User.
-        Das Angebot enthält mehrere Angebotsdetails.
-        Erwartet Status 201 CREATED und korrekte Speicherung von Angebot und Details.
+        Tests creating a new offer by a business user.
+        The offer includes multiple offer details.
+        Expects status 201 CREATED and correct saving of offer and details.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('offerslist')
         payload = {
-            "title": "Neues Angebot",
-            "description": "Beschreibung neu",
+            "title": "New Offer",
+            "description": "New description",
             "details": [
                 {
                     "title": "Standard",
                     "revisions": 3,
                     "delivery_time_in_days": 7,
-                    "price": "150.00",
-                    "features": ["Schnell", "Zuverlässig"],
+                    "price": 150.00,
+                    "features": ["Fast", "Reliable"],
                     "offer_type": "Standard"
                 },
                 {
                     "title": "Express",
                     "revisions": 1,
                     "delivery_time_in_days": 2,
-                    "price": "250.00",
-                    "features": ["Sehr schnell"],
+                    "price": 250.00,
+                    "features": ["Very fast"],
                     "offer_type": "Express"
                 },
                 {
                     "title": "Test",
                     "revisions": 1,
                     "delivery_time_in_days": 2,
-                    "price": "250.00",
-                    "features": ["Sehr schnell"],
+                    "price": 250.00,
+                    "features": ["Very fast"],
                     "offer_type": "Express"
                 }
             ]
         }
         response = self.client.post(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Offer.objects.filter(title="Neues Angebot").count(), 1)
-        created_offer = Offer.objects.get(title="Neues Angebot")
+        self.assertEqual(Offer.objects.filter(title="New Offer").count(), 1)
+        created_offer = Offer.objects.get(title="New Offer")
         self.assertEqual(created_offer.details.count(), 3)
         self.assertEqual(created_offer.user, self.business_user)
 
     def test_create_offer_as_customer_denied(self):
         """
-        Testet, dass Kunden (user_type='customer') kein Angebot erstellen dürfen.
-        Erwartet Status 403 FORBIDDEN.
+        Tests that customers (user_type='customer') are not allowed to create an offer.
+        Expects status 403 FORBIDDEN.
         """
         self.client.login(username='customeruser', password='pass1234')
         url = reverse('offerslist')
         payload = {
-            "title": "Nicht erlaubt",
-            "description": "Kunde darf nicht",
+            "title": "Not Allowed",
+            "description": "Customer not allowed",
             "details": []
         }
         response = self.client.post(url, payload, format='json')
@@ -136,8 +136,8 @@ class OfferApiTests(APITestCase):
 
     def test_get_single_offer(self):
         """
-        Testet das Abrufen eines einzelnen Angebots nach ID.
-        Erwartet Status 200 OK und Rückgabe des korrekten Angebots.
+        Tests retrieving a single offer by ID.
+        Expects status 200 OK and correct offer data returned.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('singleoffer', kwargs={'id': self.offer.id})
@@ -147,19 +147,19 @@ class OfferApiTests(APITestCase):
 
     def test_patch_offer_by_owner(self):
         """
-        Testet das Aktualisieren eines Angebots und seiner Details durch den Besitzer (business user).
-        Erwartet Status 200 OK und korrekte Änderung der Felder.
+        Tests updating an offer and its details by the owner (business user).
+        Expects status 200 OK and correct modification of fields.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('singleoffer', kwargs={'id': self.offer.id})
         payload = {
-            "title": "Geänderter Titel",
+            "title": "Changed Title",
             "details": [
                 {
                     "title": "Basic updated",
                     "revisions": 3,
                     "delivery_time_in_days": 4,
-                    "price": "120.00",
+                    "price": 120.00,
                     "features": ["Updated Feature"],
                     "offer_type": "Basic"
                 },
@@ -167,7 +167,7 @@ class OfferApiTests(APITestCase):
                     "title": "Premium updated",
                     "revisions": 6,
                     "delivery_time_in_days": 1,
-                    "price": "220.00",
+                    "price": 220.00,
                     "features": ["Updated Feature 2"],
                     "offer_type": "Premium"
                 }
@@ -176,28 +176,28 @@ class OfferApiTests(APITestCase):
         response = self.client.patch(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.offer.refresh_from_db()
-        self.assertEqual(self.offer.title, "Geänderter Titel")
+        self.assertEqual(self.offer.title, "Changed Title")
 
-        # Prüfen, ob Angebotsdetails aktualisiert wurden
+        # Check if offer details were updated
         details = list(self.offer.details.order_by('id'))
         self.assertEqual(details[0].title, "Basic updated")
         self.assertEqual(details[0].price, 120.00)
 
     def test_patch_offer_not_owner_forbidden(self):
         """
-        Testet, dass ein nicht-eigentlicher Nutzer (z.B. Kunde) ein Angebot nicht ändern darf.
-        Erwartet Status 403 FORBIDDEN.
+        Tests that a non-owner user (e.g. customer) cannot update an offer.
+        Expects status 403 FORBIDDEN.
         """
         self.client.login(username='customeruser', password='pass1234')
         url = reverse('singleoffer', kwargs={'id': self.offer.id})
-        payload = {"title": "Versuch Änderung"}
+        payload = {"title": "Attempted Change"}
         response = self.client.patch(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_offer_by_owner(self):
         """
-        Testet das Löschen eines Angebots durch den Besitzer (business user).
-        Erwartet Status 204 NO CONTENT und dass das Angebot nicht mehr existiert.
+        Tests deleting an offer by the owner (business user).
+        Expects status 204 NO CONTENT and that the offer no longer exists.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('singleoffer', kwargs={'id': self.offer.id})
@@ -207,8 +207,8 @@ class OfferApiTests(APITestCase):
 
     def test_delete_offer_not_owner_forbidden(self):
         """
-        Testet, dass ein nicht-eigentlicher Nutzer (Kunde) ein Angebot nicht löschen darf.
-        Erwartet Status 403 FORBIDDEN.
+        Tests that a non-owner user (customer) cannot delete an offer.
+        Expects status 403 FORBIDDEN.
         """
         self.client.login(username='customeruser', password='pass1234')
         url = reverse('singleoffer', kwargs={'id': self.offer.id})
@@ -217,8 +217,8 @@ class OfferApiTests(APITestCase):
 
     def test_get_offer_detail(self):
         """
-        Testet das Abrufen eines einzelnen Angebotsdetails nach ID.
-        Erwartet Status 200 OK und Rückgabe des korrekten Details.
+        Tests retrieving a single offer detail by ID.
+        Expects status 200 OK and correct detail data returned.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('offerdetails', kwargs={'id': self.detail1.id})
@@ -229,8 +229,8 @@ class OfferApiTests(APITestCase):
 
     def test_get_offer_detail_not_found(self):
         """
-        Testet den Abruf eines nicht vorhandenen Angebotsdetails.
-        Erwartet Status 404 NOT FOUND.
+        Tests retrieving a non-existing offer detail.
+        Expects status 404 NOT FOUND.
         """
         self.client.login(username='businessuser', password='pass1234')
         url = reverse('offerdetails', kwargs={'id': 999999})

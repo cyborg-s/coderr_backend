@@ -14,14 +14,14 @@ def baseinfo(request):
     """
     GET /api/baseinfo/
 
-    Gibt allgemeine Statistikdaten zur Plattform zurück.
+    Returns general statistical data about the platform.
 
     Response:
         {
-            "review_count": int,              # Anzahl aller Bewertungen
-            "average_rating": float,          # Durchschnittliche Bewertung (gerundet auf eine Nachkommastelle)
-            "business_profile_count": int,    # Anzahl der Business-Profile
-            "offer_count": int                # Anzahl aller Angebote
+            "review_count": int,              # Total number of reviews
+            "average_rating": float,          # Average rating (rounded to one decimal place)
+            "business_profile_count": int,    # Number of business profiles
+            "offer_count": int                # Total number of offers
         }
     """
     review_count = Review.objects.count()

@@ -5,8 +5,8 @@ from ..models import UserProfile
 
 class NestedUserSerializer(serializers.ModelSerializer):
     """
-    Ein einfacher Serializer für User-Model, der nur die 'id' serialisiert.
-    Kann verwendet werden, wenn man User-Referenzen verschachtelt darstellen möchte.
+    A simple serializer for the User model that serializes only the 'id'.
+    Can be used to represent nested user references.
     """
     class Meta:
         model = User
@@ -14,15 +14,15 @@ class NestedUserSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
-    Serializer für das UserProfile-Modell mit verschachtelten Feldern aus dem
-    zugehörigen User-Modell.
+    Serializer for the UserProfile model including nested fields
+    from the related User model.
 
-    Felder:
-    - user: ID des zugehörigen User-Objekts (read-only)
-    - type: user_type des Profils (CharField, basiert auf user_type im Profil)
-    - username: Username des Users (read-only)
-    - email: Email des Users (read-only)
-    - restliche Felder aus UserProfile (first_name, last_name, tel, etc.)
+    Fields:
+    - user: ID of the related User object (read-only)
+    - type: user_type of the profile (CharField, based on user_type in profile)
+    - username: username of the User (read-only)
+    - email: email of the User (read/write)
+    - remaining fields from UserProfile (first_name, last_name, tel, etc.)
     """
     user = serializers.IntegerField(source='user.id', read_only=True)
     type = serializers.CharField(source='user_type')
@@ -33,16 +33,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             'id',
-            'username',   # User.username, read-only
-            'user',       # User.id, read-only
-            'type',       # UserProfile.user_type
+            'username',
+            'user',
+            'type',
             'first_name',
             'last_name',
             'tel',
             'file',
             'location',
-            'email',      
+            'email',
             'created_at',
             'description',
             'working_hours',
         ]
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        user = instance.user
+        for attr, value in user_data.items():
+            setattr(user, attr, value)
+        user.save()
+
+        return instance

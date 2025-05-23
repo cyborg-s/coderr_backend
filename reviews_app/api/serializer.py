@@ -4,21 +4,21 @@ from ..models import Review
 
 class ReviewSerializer(serializers.ModelSerializer):
     """
-    Serializer für das Review-Modell.
+    Serializer for the Review model.
 
-    - serialisiert alle wichtigen Felder eines Reviews,
-      darunter den bewerteten Business User, den Reviewer,
-      die Bewertung (rating), Beschreibung (description)
-      sowie Zeitstempel für Erstellung und Aktualisierung.
+    - Serializes all important fields of a review,
+      including the business user being reviewed, the reviewer,
+      the rating, description,
+      as well as timestamps for creation and last update.
     """
     class Meta:
         model = Review
         fields = [
-            'id',             # Primärschlüssel der Review
-            'business_user',  # User, der bewertet wird (Empfänger der Bewertung)
-            'reviewer',       # User, der die Bewertung abgegeben hat
-            'rating',         # Bewertungswert (z.B. Sterne)
-            'description',    # Freitextliche Beschreibung zur Bewertung
-            'created_at',     # Zeitpunkt der Erstellung der Review
-            'updated_at'      # Zeitpunkt der letzten Aktualisierung
+            'id',             
+            'business_user',  
+            'reviewer',       
+            'rating',         
+            'description',    
+            'created_at',     
+            'updated_at'      
         ]

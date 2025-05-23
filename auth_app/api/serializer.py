@@ -4,12 +4,12 @@ from rest_framework.authtoken.models import Token
 
 class UserSerializer(serializers.ModelSerializer):
     """
-    Serializer zur Registrierung eines neuen Benutzers.
+    Serializer for registering a new user.
 
-    Felder:
-    - username (str): Benutzername
-    - email (str): E-Mail-Adresse
-    - password (str): Passwort (nur schreibbar)
+    Fields:
+    - username (str): Username
+    - email (str): Email address
+    - password (str): Password (write-only)
     """
     password = serializers.CharField(write_only=True)
 
@@ -19,27 +19,27 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Erstellt einen neuen Benutzer mit verschlüsseltem Passwort.
+        Creates a new user with an encrypted password.
         """
         user = User(
             username=validated_data['username'],
             email=validated_data['email'],
         )
-        user.set_password(validated_data['password'])  # Passwort sicher setzen
+        user.set_password(validated_data['password'])
         user.save()
         return user
 
 
 class LoginSerializer(serializers.Serializer):
     """
-    Serializer zur Benutzer-Authentifizierung.
+    Serializer for user authentication.
 
-    Eingabe:
-    - username (str): Benutzername
-    - password (str): Passwort
+    Input:
+    - username (str): Username
+    - password (str): Password
 
-    Rückgabe bei Erfolg:
-    - token (str): Authentifizierungs-Token
+    Output on success:
+    - token (str): Authentication token
     - username (str)
     - email (str)
     - user_id (int)
@@ -49,7 +49,7 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, data):
         """
-        Überprüft die Zugangsdaten und gibt ein Auth-Token zurück.
+        Validates the credentials and returns an auth token.
         """
         user = User.objects.filter(username=data['username']).first()
         if user is None:

@@ -12,24 +12,23 @@ from .serializer import UserProfileSerializer
 @permission_classes([IsAuthenticated])
 def user_profile(request, pk):
     """
-    API-Endpunkt zum Abrufen oder Aktualisieren eines UserProfiles.
+    API endpoint to retrieve or update a UserProfile.
 
     GET:
-        Gibt das UserProfile eines Nutzers anhand der user_id (pk) zurück.
+        Returns the UserProfile of a user identified by user_id (pk).
 
     PATCH:
-        Ermöglicht partielles Aktualisieren des UserProfiles eines Nutzers.
-        Nur authentifizierte Nutzer können diese Aktion ausführen.
+        Allows partial update of a user's UserProfile.
+        Only authenticated users can perform this action.
 
     Args:
-        request: HTTP Request-Objekt.
-        pk: Primärschlüssel des Users, dessen Profil abgerufen oder aktualisiert werden soll.
+        request: HTTP request object.
+        pk: Primary key of the user whose profile is to be retrieved or updated.
 
     Returns:
-        HTTP Response mit UserProfile-Daten oder Fehlerstatus.
+        HTTP response with UserProfile data or error status.
     """
     try:
-        # Versuche, das UserProfile anhand der user_id zu holen oder 404, wenn nicht gefunden
         profile = get_object_or_404(UserProfile, user_id=pk)
     except Exception:
         return Response({'error': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -39,35 +38,35 @@ def user_profile(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'PATCH':
-        # Teilweise Aktualisierung (patch) des Profils mit den übergebenen Daten
         serializer = UserProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        # Falls Validierung fehlschlägt, Fehler zurückgeben
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def business_profiles(request):
     """
-    API-Endpunkt zum Abrufen aller Business-UserProfile.
+    API endpoint to retrieve all business UserProfiles.
 
     Returns:
-        Liste aller UserProfile mit user_type 'business'.
+        List of all UserProfiles with user_type 'business'.
     """
     profiles = UserProfile.objects.filter(user_type=UserProfile.BUSINESS)
     serializer = UserProfileSerializer(profiles, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def customer_profiles(request):
     """
-    API-Endpunkt zum Abrufen aller Customer-UserProfile.
+    API endpoint to retrieve all customer UserProfiles.
 
     Returns:
-        Liste aller UserProfile mit user_type 'customer'.
+        List of all UserProfiles with user_type 'customer'.
     """
     profiles = UserProfile.objects.filter(user_type=UserProfile.CUSTOMER)
     serializer = UserProfileSerializer(profiles, many=True)

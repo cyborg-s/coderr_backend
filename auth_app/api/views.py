@@ -12,11 +12,11 @@ from user_app.models import UserProfile
 @permission_classes([AllowAny])
 def registration(request):
     """
-    Registrierung eines neuen Benutzers.
+    Registration of a new user.
 
-    Erstellt einen neuen User, ein zugehöriges UserProfile und gibt ein Auth-Token zurück.
+    Creates a new User, an associated UserProfile, and returns an auth token.
 
-    Body-Parameter:
+    Body parameters:
     - username (str)
     - email (str)
     - password (str)
@@ -24,47 +24,36 @@ def registration(request):
     - last_name (str)
     - phone_number (str)
     - address (str)
-    - type (str): Benutzerrolle oder -typ
+    - type (str): User role or type
 
-    Antwort (201 Created):
-    - token (str): Auth-Token
+    Response (201 Created):
+    - token (str): Auth token
     - username (str)
     - email (str)
     - user_id (int)
     """
-    # Extrahiere die notwendigen User-Daten aus der Anfrage
+
     user_data = {
         "username": request.data.get("username"),
         "email": request.data.get("email"),
         "password": request.data.get("password")
     }
-
-    # Serialisiere und überprüfe die Benutzerdaten
     user_serializer = UserSerializer(data=user_data)
     if user_serializer.is_valid():
-        # Benutzer speichern
         user = user_serializer.save()
-
-        # Authentifizierungs-Token generieren oder abrufen
         token, created = Token.objects.get_or_create(user=user)
-
-        # Benutzerprofil mit weiteren Feldern erstellen
         profile = UserProfile.objects.create(
             user=user,
             first_name=request.data.get('first_name', ''),
             last_name=request.data.get('last_name', ''),
             user_type=request.data.get('type'),
         )
-
-        # Rückgabe der Authentifizierungsdaten
         return Response({
             'token': token.key,
             'username': user.username,
             'email': user.email,
             'user_id': user.id
         }, status=status.HTTP_201_CREATED)
-
-    # Rückgabe von Fehlern bei ungültigen Daten
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -72,24 +61,20 @@ def registration(request):
 @permission_classes([AllowAny])
 def login(request):
     """
-    Benutzer-Login.
+    User login.
 
-    Erwartet gültige Zugangsdaten (Benutzername und Passwort) und gibt bei Erfolg Authentifizierungsdaten zurück.
+    Expects valid credentials (username and password) and returns authentication data on success.
 
-    Body-Parameter:
+    Body parameters:
     - username (str)
     - password (str)
 
-    Antwort (200 OK):
+    Response (200 OK):
     - token (str)
     - user_id (int)
     - username (str)
     """
     serializer = LoginSerializer(data=request.data)
-
-    # Prüfen, ob die eingegebenen Login-Daten korrekt sind
     if serializer.is_valid():
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-    # Rückgabe von Fehlern bei ungültigen Login-Daten
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

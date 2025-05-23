@@ -1,16 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-
 from ..models import Offer, OfferDetail
 
 
-# -------------------------------------------
-# Serializer für die URL-Verlinkung von OfferDetail
-# -------------------------------------------
 class OfferDetailLinkSerializer(serializers.ModelSerializer):
     """
-    Serialisiert nur die ID und eine URL zum OfferDetail-Objekt,
-    um eine einfache Verlinkung zu ermöglichen.
+    Serializes only the ID and a URL for the OfferDetail object
+    to allow simple linking.
     """
     url = serializers.SerializerMethodField()
 
@@ -19,29 +15,24 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
         fields = ['id', 'url']
 
     def get_url(self, obj):
-        # Generiert die URL zum Detail-Endpunkt basierend auf der ID
         return f"/offerdetails/{obj.id}/"
 
-# -------------------------------------------
-# Serializer für grundlegende User-Daten
-# -------------------------------------------
+
 class UserDetailsSerializer(serializers.ModelSerializer):
     """
-    Serialisiert die wichtigsten Nutzerdaten, die in Angeboten angezeigt werden.
+    Serializes basic user information displayed in offers.
     """
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'username']
 
-# -------------------------------------------
-# Serializer für Angebots-Listenansicht
-# -------------------------------------------
+
 class OfferListSerializer(serializers.ModelSerializer):
     """
-    Serialisiert ein Angebot inklusive:
-    - Verlinkung zu zugehörigen OfferDetails
-    - Basis-Userinformationen
-    - Berechnete Minimalwerte für Preis und Lieferzeit
+    Serializes an offer including:
+    - Links to related OfferDetails
+    - Basic user information
+    - Computed minimum values for price and delivery time
     """
     details = OfferDetailLinkSerializer(many=True, read_only=True)
     user_details = UserDetailsSerializer(source='user', read_only=True)
@@ -59,34 +50,48 @@ class OfferListSerializer(serializers.ModelSerializer):
 
     def get_min_price(self, obj):
         """
-        Gibt den annotierten Mindestpreis zurück, falls vorhanden,
-        sonst wird ein berechneter Wert verwendet.
+        Returns the annotated minimum price if available,
+        otherwise uses the calculated value.
         """
         return getattr(obj, 'annotated_min_price', None) or obj.calculated_min_price
 
     def get_min_delivery_time(self, obj):
         """
-        Gibt die annotierte minimale Lieferzeit zurück oder den berechneten Wert.
+        Returns the annotated minimum delivery time or the calculated value.
         """
         return getattr(obj, 'annotated_min_delivery_time', None) or obj.calculated_min_delivery_time
 
-# -------------------------------------------
-# Serializer für das OfferDetail-Model (vollständige Darstellung)
-# -------------------------------------------
+
 class OfferDetailSerializer(serializers.ModelSerializer):
     """
-    Vollständiger Serializer für OfferDetail-Objekte mit allen wichtigen Feldern.
+    Full serializer for OfferDetail objects including all relevant fields.
     """
     class Meta:
         model = OfferDetail
-        fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
+        fields = [
+            'id',
+            'offer',
+            'title',
+            'revisions',
+            'delivery_time_in_days',
+            'price',
+            'features',
+            'offer_type',
+        ]
+        extra_kwargs = {
+            'offer': {'read_only': True},
+            'title': {'required': True},
+            'revisions': {'required': True},
+            'delivery_time_in_days': {'required': True},
+            'price': {'required': True},
+            'features': {'required': True},
+            'offer_type': {'required': True},
+        }
 
-# -------------------------------------------
-# Serializer zum Erstellen eines Angebots inkl. verschachtelter OfferDetails
-# -------------------------------------------
+
 class OfferCreateSerializer(serializers.ModelSerializer):
     """
-    Erlaubt das Erstellen eines Angebots mit mehreren OfferDetails in einem Request.
+    Allows creating an offer with multiple nested OfferDetails in one request.
     """
     details = OfferDetailSerializer(many=True)
 
@@ -96,28 +101,19 @@ class OfferCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Überschreibt die Standard-Create-Methode, um
-        die verschachtelten OfferDetails anzulegen.
+        Overrides default create method to also create nested OfferDetails.
         """
         details_data = validated_data.pop('details')
-        # User wird aus Context (Request) bezogen, nicht aus Validated Data
         user = self.context['request'].user
-        
-        # Angebot mit dem authentifizierten User anlegen
-        offer = Offer.objects.create( **validated_data)
-        
-        # Alle Details einzeln erstellen und dem Angebot zuordnen
+        offer = Offer.objects.create(**validated_data)
         for detail_data in details_data:
             OfferDetail.objects.create(offer=offer, **detail_data)
-        
         return offer
 
-# -------------------------------------------
-# Serializer für partielle Aktualisierung (PATCH) von Angeboten inkl. Details
-# -------------------------------------------
+
 class OfferPatchSerializer(serializers.ModelSerializer):
     """
-    Unterstützt die Aktualisierung eines Angebots mit verschachtelten OfferDetails.
+    Supports updating an offer including nested OfferDetails.
     """
     details = OfferDetailSerializer(many=True)
     user_details = UserDetailsSerializer(source='user', read_only=True)
@@ -139,24 +135,20 @@ class OfferPatchSerializer(serializers.ModelSerializer):
     def get_min_delivery_time(self, obj):
         return obj.calculated_min_delivery_time
 
-
     def update(self, instance, validated_data):
-        """
-        Überschreibt das Update, um auch verschachtelte OfferDetails zu aktualisieren.
-        Vorhandene Details werden nacheinander mit den eingehenden Daten überschrieben.
-        """
         details_data = validated_data.pop('details', None)
-
-        # Normale Felder aktualisieren
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Wenn Details übergeben wurden, aktualisiere diese
         if details_data:
             existing_details = list(instance.details.all().order_by('id'))
+            if len(details_data) != len(existing_details):
+                raise serializers.ValidationError("The number of submitted details does not match the existing ones.")
+
             for incoming_data, existing_detail in zip(details_data, existing_details):
-                for attr, value in incoming_data.items():
-                    setattr(existing_detail, attr, value)
-                existing_detail.save()
+                detail_serializer = OfferDetailSerializer(existing_detail, data=incoming_data, partial=True)
+                detail_serializer.is_valid(raise_exception=True)
+                detail_serializer.save()
+
         return instance

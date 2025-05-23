@@ -3,28 +3,26 @@ from django.contrib.auth.models import User
 
 class UserProfile(models.Model):
     """
-    Erweiterung des Django-Benutzermodells um zusätzliche Profilinformationen.
+    Extension of the Django User model with additional profile information.
 
-    Attribute:
-        user (OneToOneField): Verbindung zum Django User.
-        first_name (str): Vorname des Nutzers (optional).
-        last_name (str): Nachname des Nutzers (optional).
-        user_type (str): Art des Nutzers (z. B. "Freelancer", "Kunde").
-        phone_number (str): Telefonnummer (optional).
-        address (str): Adresse (optional).
-        file (ImageField): Profilbild (optional).
-        location (str): Standortangabe (optional).
-        tel (str): Alternative Telefonnummer (optional).
-        description (str): Beschreibung oder Biografie (optional).
-        working_hours (str): Arbeitszeiten oder Verfügbarkeit (optional).
-        created_at (datetime): Erstellungszeitpunkt des Profils (automatisch gesetzt).
+    Attributes:
+        user (OneToOneField): Link to the Django User.
+        first_name (str): User's first name (optional).
+        last_name (str): User's last name (optional).
+        user_type (str): Type of user (e.g., "Freelancer", "Customer").
+        phone_number (str): Phone number (optional).
+        address (str): Address (optional).
+        file (ImageField): Profile picture (optional).
+        location (str): Location information (optional).
+        tel (str): Alternative phone number (optional).
+        description (str): Description or biography (optional).
+        working_hours (str): Working hours or availability (optional).
+        created_at (datetime): Timestamp when the profile was created (auto-set).
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
     user_type = models.CharField(max_length=20)
-    # phone_number = models.CharField(max_length=20, blank=True)
-    # address = models.CharField(max_length=255, blank=True)
     file = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     location = models.CharField(max_length=100, blank=True)
     tel = models.CharField(max_length=20, blank=True)
@@ -34,6 +32,6 @@ class UserProfile(models.Model):
 
     def __str__(self):
         """
-        Rückgabe des Benutzernamens zur Anzeige im Admin oder bei Debug-Ausgaben.
+        Returns the username for display in the admin or debug output.
         """
         return f"{self.user.username}'s profile"

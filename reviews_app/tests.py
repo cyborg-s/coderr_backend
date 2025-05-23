@@ -7,37 +7,30 @@ from .models import Review
 
 class ReviewTests(APITestCase):
     """
-    Testklasse für das Review-System.
-    Deckt Erstellung, Abruf, Aktualisierung und Löschung von Bewertungen ab.
+    Test class for the review system.
+    Covers creation, retrieval, update, and deletion of reviews.
     """
 
     def setUp(self):
         """
-        Setup-Methode wird vor jedem Test aufgerufen.
-        Erstellt zwei Benutzer (Reviewer und Business), loggt den Reviewer ein
-        und legt ein Beispielreview an.
+        Setup method called before each test.
+        Creates two users (reviewer and business), logs in the reviewer,
+        and creates a sample review.
         """
-        # Reviewer = Verfasser der Bewertung
         self.reviewer = User.objects.create_user(username='reviewer', password='pass1234')
-
-        # Business = Bewerteter Benutzer
         self.business_user = User.objects.create_user(username='business', password='pass1234')
-
-        # Reviewer einloggen (Session-Login, da kein Token verwendet wird)
         self.client.login(username='reviewer', password='pass1234')
-
-        # Beispielhafte Bewertung für spätere Tests
         self.review = Review.objects.create(
             reviewer=self.reviewer,
             business_user=self.business_user,
             rating=4,
-            description='Gute Zusammenarbeit.'
+            description='Good cooperation.'
         )
 
     def test_get_reviews_list(self):
         """
-        Testet das Abrufen der gesamten Review-Liste.
-        Erwartet mindestens ein Review im Rückgabewert.
+        Tests retrieving the full list of reviews.
+        Expects at least one review in the response.
         """
         url = reverse('reviewslist')
         response = self.client.get(url)
@@ -47,7 +40,7 @@ class ReviewTests(APITestCase):
 
     def test_get_reviews_with_filters(self):
         """
-        Testet das Filtern von Bewertungen nach business_user_id.
+        Tests filtering reviews by business_user_id.
         """
         url = reverse('reviewslist')
         response = self.client.get(url, {'business_user_id': self.business_user.id})
@@ -57,13 +50,13 @@ class ReviewTests(APITestCase):
 
     def test_create_review_success(self):
         """
-        Testet das erfolgreiche Erstellen einer Bewertung.
+        Tests successful creation of a review.
         """
         url = reverse('reviewslist')
         data = {
             'business_user': self.business_user.id,
             'rating': 5,
-            'description': 'Hervorragend!'
+            'description': 'Excellent!'
         }
 
         response = self.client.post(url, data, format='json')
@@ -75,11 +68,11 @@ class ReviewTests(APITestCase):
 
     def test_create_review_missing_fields(self):
         """
-        Testet die Validierung beim Erstellen einer Bewertung mit fehlenden Pflichtfeldern.
+        Tests validation when creating a review with missing required fields.
         """
         url = reverse('reviewslist')
         data = {
-            'business_user': self.business_user.id  # rating & description fehlen
+            'business_user': self.business_user.id
         }
 
         response = self.client.post(url, data, format='json')
@@ -90,7 +83,7 @@ class ReviewTests(APITestCase):
 
     def test_get_single_review(self):
         """
-        Testet das Abrufen einer einzelnen Bewertung.
+        Tests retrieving a single review.
         """
         url = reverse('reviewdetail', args=[self.review.id])
         response = self.client.get(url)
@@ -100,12 +93,12 @@ class ReviewTests(APITestCase):
 
     def test_patch_review_by_owner(self):
         """
-        Testet das Bearbeiten einer Bewertung durch den Ersteller.
+        Tests editing a review by its creator.
         """
         url = reverse('reviewdetail', args=[self.review.id])
         data = {
             'rating': 3,
-            'description': 'Etwas anders als erwartet.'
+            'description': 'Somewhat different than expected.'
         }
 
         response = self.client.patch(url, data, format='json')
@@ -116,9 +109,8 @@ class ReviewTests(APITestCase):
 
     def test_patch_review_by_other_user_denied(self):
         """
-        Testet, ob ein anderer User eine fremde Bewertung nicht bearbeiten darf.
+        Tests that another user cannot edit a review they do not own.
         """
-        # Anderen User einloggen
         other_user = User.objects.create_user(username='hacker', password='pass1234')
         self.client.login(username='hacker', password='pass1234')
 
@@ -130,7 +122,7 @@ class ReviewTests(APITestCase):
 
     def test_delete_review_by_owner(self):
         """
-        Testet das Löschen einer Bewertung durch den Besitzer.
+        Tests deleting a review by its owner.
         """
         url = reverse('reviewdetail', args=[self.review.id])
         response = self.client.delete(url)
@@ -140,7 +132,7 @@ class ReviewTests(APITestCase):
 
     def test_delete_review_by_other_user_denied(self):
         """
-        Testet, ob ein fremder User eine Bewertung nicht löschen darf.
+        Tests that another user cannot delete a review they do not own.
         """
         other_user = User.objects.create_user(username='hacker', password='pass1234')
         self.client.login(username='hacker', password='pass1234')

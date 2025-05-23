@@ -6,18 +6,18 @@ from user_app.models import UserProfile
 
 class AuthAPITestCase(APITestCase):
     """
-    Testklasse für die Authentifizierungs-API:
-    - Registrierung neuer Nutzer
-    - Login bestehender Nutzer
-    Es werden sowohl positive Fälle (erfolgreiche Registrierung/Login) als auch
-    negative Fälle (ungültige Daten, falsches Passwort, nicht existierender Nutzer) getestet.
+    Test class for the Authentication API:
+    - Registration of new users
+    - Login of existing users
+    Both positive cases (successful registration/login) and
+    negative cases (invalid data, wrong password, non-existing user) are tested.
     """
 
     def setUp(self):
         """
-        Vorbereitung der Testumgebung:
-        - Ein existierender Nutzer mit Profil wird angelegt
-        - URLs für Registrierung und Login werden als Strings definiert, da die Pfade über includes laufen
+        Setup of the test environment:
+        - Creates an existing user with profile
+        - Defines URLs for registration and login as strings, since the paths are included via includes
         """
         self.test_user = User.objects.create_user(
             username="existinguser",
@@ -25,18 +25,16 @@ class AuthAPITestCase(APITestCase):
             password="strongpassword"
         )
         UserProfile.objects.create(user=self.test_user, user_type="Freelancer")
-
-        # Pfade direkt als Strings, weil URLs in includes sind und reverse ggf. nicht funktioniert
         self.registration_url = '/api/registration/'
         self.login_url = '/api/login/'
 
     def test_registration_success(self):
         """
-        Test für eine erfolgreiche Registrierung:
-        - POST an /api/registration/ mit validen Daten
-        - Erwartet wird HTTP 201 Created
-        - Antwort enthält einen Auth-Token
-        - Überprüfung, dass Benutzer und Profil korrekt angelegt wurden
+        Test for successful registration:
+        - POST to /api/registration/ with valid data
+        - Expects HTTP 201 Created
+        - Response contains an auth token
+        - Verifies that the user and profile were created correctly
         """
         data = {
             "username": "newuser",
@@ -45,8 +43,8 @@ class AuthAPITestCase(APITestCase):
             "first_name": "New",
             "last_name": "User",
             "phone_number": "123456789",
-            "address": "Teststraße 1",
-            "type": "Kunde"
+            "address": "Test Street 1",
+            "type": "Customer"
         }
         response = self.client.post(self.registration_url, data, format='json')
 
@@ -55,32 +53,31 @@ class AuthAPITestCase(APITestCase):
         self.assertEqual(response.data['username'], data['username'])
         self.assertEqual(response.data['email'], data['email'])
 
-        # Validierung, ob User und UserProfile korrekt gespeichert wurden
         user = User.objects.get(username=data['username'])
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.user_type, data['type'])
 
     def test_registration_invalid_data(self):
         """
-        Test für fehlerhafte Registrierung:
-        - POST mit ungültigen Daten (leerer Username, fehlerhafte Email, kein Passwort)
-        - Erwartet wird HTTP 400 Bad Request
+        Test for faulty registration:
+        - POST with invalid data (empty username, invalid email, no password)
+        - Expects HTTP 400 Bad Request
         """
         data = {
             "username": "",
             "email": "invalidemail",
             "password": "",
-            "type": "Kunde"
+            "type": "Customer"
         }
         response = self.client.post(self.registration_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_success(self):
         """
-        Test für erfolgreichen Login:
-        - POST an /api/login/ mit korrektem Nutzernamen und Passwort
-        - Erwartet wird HTTP 200 OK
-        - Antwort enthält Token und korrekte Userdaten
+        Test for successful login:
+        - POST to /api/login/ with correct username and password
+        - Expects HTTP 200 OK
+        - Response contains token and correct user data
         """
         data = {
             "username": self.test_user.username,
@@ -95,9 +92,9 @@ class AuthAPITestCase(APITestCase):
 
     def test_login_invalid_password(self):
         """
-        Test für Login mit falschem Passwort:
-        - POST an /api/login/ mit korrektem Nutzernamen, aber falschem Passwort
-        - Erwartet wird HTTP 400 Bad Request (Fehlerhafte Authentifizierung)
+        Test for login with wrong password:
+        - POST to /api/login/ with correct username but wrong password
+        - Expects HTTP 400 Bad Request (failed authentication)
         """
         data = {
             "username": self.test_user.username,
@@ -108,9 +105,9 @@ class AuthAPITestCase(APITestCase):
 
     def test_login_nonexistent_user(self):
         """
-        Test für Login mit nicht vorhandenem Nutzer:
-        - POST an /api/login/ mit Username, der nicht existiert
-        - Erwartet wird HTTP 400 Bad Request
+        Test for login with non-existent user:
+        - POST to /api/login/ with a username that does not exist
+        - Expects HTTP 400 Bad Request
         """
         data = {
             "username": "noone",
