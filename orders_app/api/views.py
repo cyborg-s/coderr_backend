@@ -1,7 +1,8 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from django.shortcuts import get_object_or_404
 
 from ..models import Order
@@ -10,37 +11,38 @@ from user_app.models import UserProfile
 from offers_app.models import OfferDetail
 
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def orders_list(request):
+class OrderListCreateView(ListCreateAPIView):
     """
-    Lists all orders of the currently logged-in user (GET).
-    Allows a customer to create a new order based on an OfferDetail (POST).
+    GET: Listet alle Bestellungen des aktuellen Nutzers auf.
+    POST: Erstellt eine neue Bestellung für Kunden.
     """
-    user = request.user
-    
-    if request.method == 'GET':
-        if getattr(user, 'profile', None) and user.profile.user_type == 'business':
-            orders = Order.objects.filter(business_user=user)
-        else:
-            orders = Order.objects.filter(customer_user=user)
-        
-        serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        if not (getattr(user, 'profile', None) and user.profile.user_type == 'customer'):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.profile.user_type == 'customer':
+            return Order.objects.filter(customer_user=user)
+        elif user.profile.user_type == 'business':
+            return Order.objects.filter(offer_detail__offer__user=user)
+        return Order.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        profile = getattr(user, 'profile', None)
+
+        if not (profile and profile.user_type == 'customer'):
             return Response({'detail': 'Only customers can create orders.'}, status=status.HTTP_403_FORBIDDEN)
 
         offer_detail_id = request.data.get('offer_detail_id')
         if not offer_detail_id:
             return Response({'error': 'offer_detail_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
         try:
             offer_detail = OfferDetail.objects.get(pk=offer_detail_id)
         except (OfferDetail.DoesNotExist, ValueError):
             return Response({'error': 'OfferDetail not found'}, status=status.HTTP_404_NOT_FOUND)
-    
+
         order = Order.objects.create(
             business_user=offer_detail.offer.user,
             customer_user=user,
@@ -48,67 +50,69 @@ def orders_list(request):
             price=offer_detail.price,
             offer_detail=offer_detail
         )
-        serializer = OrderSerializer(order)
+
+        serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def order_details(request, id):
+
+class OrderDetailView(RetrieveUpdateDestroyAPIView):
     """
-    Detail view for a single order.
-    - GET: Returns the order details.
-    - PATCH: Allows business users to partially update an order.
-    - DELETE: Only staff members can delete an order.
+    GET: Holt Details zur Bestellung.
+    PATCH: Nur Business-User dürfen aktualisieren.
+    DELETE: Nur Staff darf löschen.
     """
-    order = get_object_or_404(Order, pk=id)
-    
-    if request.method == 'GET':
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
-    
-    elif request.method == 'PATCH':
+    lookup_field = 'id'
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        order = self.get_object()
         try:
             profile = UserProfile.objects.get(user_id=request.user.id)
         except UserProfile.DoesNotExist:
             return Response({'error': 'User profile not found.'}, status=status.HTTP_403_FORBIDDEN)
-        
+
         if profile.user_type != 'business':
             return Response({'error': 'Only business users can update orders.'}, status=status.HTTP_403_FORBIDDEN)
-        
-        serializer = OrderSerializer(order, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'DELETE':
+        return super().partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
         if not request.user.is_staff:
             return Response({'error': 'Only staff can delete orders.'}, status=status.HTTP_403_FORBIDDEN)
-        order.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().delete(request, *args, **kwargs)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def order_count(request, buissness_user):
+
+class OrderCountView(APIView):
     """
-    Returns the count of orders with status 'in_progress' for a business user.
+    Gibt die Anzahl der Bestellungen mit Status 'in_progress' für einen Business-User zurück.
     """
-    count = Order.objects.filter(business_user=buissness_user, status='in_progress').count()
-    if count == 0:
-        return Response({'detail': 'No in-progress orders found.'}, status=status.HTTP_404_NOT_FOUND)
-    return Response({'order_count': count})
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user):
+        try:
+            UserProfile.objects.get(pk=business_user, user_type='business')
+        except UserProfile.DoesNotExist:
+            return Response({'detail': 'Business user not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        count = Order.objects.filter(business_user=business_user, status='in_progress').count()
+        return Response({'order_count': count}, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def completed_order_count(request, buissness_user):
+class CompletedOrderCountView(APIView):
     """
-    Returns the count of completed orders (status 'completed') for a business user.
+    Gibt die Anzahl der abgeschlossenen Bestellungen für einen Business-User zurück.
     """
-    count = Order.objects.filter(business_user=buissness_user, status='completed').count()
-    if count == 0:
-        return Response({'detail': 'No in-progress orders found.'}, status=status.HTTP_404_NOT_FOUND)
-    return Response({'completed_order_count': count})
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user):
+        try:
+            UserProfile.objects.get(pk=business_user, user_type='business')
+        except UserProfile.DoesNotExist:
+            return Response({'detail': 'Business user not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        count = Order.objects.filter(business_user=business_user, status='completed').count()
+        return Response({'completed_order_count': count}, status=status.HTTP_200_OK)

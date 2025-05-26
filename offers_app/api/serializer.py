@@ -70,7 +70,6 @@ class OfferDetailSerializer(serializers.ModelSerializer):
         model = OfferDetail
         fields = [
             'id',
-            'offer',
             'title',
             'revisions',
             'delivery_time_in_days',
@@ -79,7 +78,6 @@ class OfferDetailSerializer(serializers.ModelSerializer):
             'offer_type',
         ]
         extra_kwargs = {
-            'offer': {'read_only': True},
             'title': {'required': True},
             'revisions': {'required': True},
             'delivery_time_in_days': {'required': True},
@@ -137,17 +135,24 @@ class OfferPatchSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         details_data = validated_data.pop('details', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
         if details_data:
-            existing_details = list(instance.details.all().order_by('id'))
-            if len(details_data) != len(existing_details):
-                raise serializers.ValidationError("The number of submitted details does not match the existing ones.")
+            existing_details = {d.offer_type: d for d in instance.details.all()}
 
-            for incoming_data, existing_detail in zip(details_data, existing_details):
-                detail_serializer = OfferDetailSerializer(existing_detail, data=incoming_data, partial=True)
+            for detail_data in details_data:
+                offer_type = detail_data.get('offer_type')
+                if not offer_type:
+                    raise serializers.ValidationError("offer_type muss im Detail angegeben werden.")
+
+                existing_detail = existing_details.get(offer_type)
+                if not existing_detail:
+                    raise serializers.ValidationError(f"Kein Detail mit offer_type '{offer_type}' gefunden.")
+
+                detail_serializer = OfferDetailSerializer(existing_detail, data=detail_data, partial=True)
                 detail_serializer.is_valid(raise_exception=True)
                 detail_serializer.save()
 

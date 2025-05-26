@@ -18,22 +18,25 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from user_app.api import urls as user_urls
+from offers_app.api import urls as offers_urls
+from orders_app.api import urls as orders_urls
+from auth_app.api import urls as auth_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/registration/', include('auth_app.api.urls.registration')),
-    path('api/login/', include('auth_app.api.urls.login')),
-    path('api/profile/', include('user_app.api.urls.user')),
-    path('api/profiles/', include('user_app.api.urls.profiles')),
-    path('api/offers/', include('offers_app.api.urls.offers')),
-    path('api/offerdetails/', include('offers_app.api.urls.details')),
-    path('api/orders/', include('orders_app.api.urls.orders')),
-    path('api/order-count/', include('orders_app.api.urls.order_count')),
-    path('api/completed-order-count/', include('orders_app.api.urls.completed_order_count')),
+    path('api/registration/', include((auth_urls.registration_urlpatterns, 'auth_app'), namespace='registration')),
+    path('api/login/', include((auth_urls.login_urlpatterns, 'auth_app'), namespace='login')),
+    path('api/profile/', include((user_urls.userprofile_urlpatterns, 'user_app'), namespace='userprofile')),
+    path('api/profiles/', include((user_urls.userprofiles_urlpatterns, 'user_app'), namespace='userprofiles')),
+    path('api/offers/', include((offers_urls.offers_urlpatterns, 'offers_app'), namespace='offers')),
+    path('api/offerdetails/', include((offers_urls.details_urlpatterns, 'offers_app'), namespace='offerdetails')),
+    path('api/orders/', include((orders_urls.orders_urlpatterns, 'orders_app'), namespace='orders')),
+    path('api/order-count/', include((orders_urls.order_count_urlpatterns, 'orders_app'), namespace='ordercount')),
+    path('api/completed-order-count/', include((orders_urls.completed_order_count_urlpatterns, 'orders_app'), namespace='completedordercount')),
     path('api/reviews/', include('reviews_app.api.urls')),
     path('api/base-info/', include('baseinfo_app.api.urls')),
-    path('api/', include('offers_app.api.urls.offers')),
 ]
 
 if settings.DEBUG:

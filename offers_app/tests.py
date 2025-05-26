@@ -64,7 +64,7 @@ class OfferApiTests(APITestCase):
         Also checks if the title, minimum price, and minimum delivery time are correct.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('offerslist')
+        url = reverse('offers:offerslist')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
@@ -81,7 +81,7 @@ class OfferApiTests(APITestCase):
         Expects status 201 CREATED and correct saving of offer and details.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('offerslist')
+        url = reverse('offers:offerslist')
         payload = {
             "title": "New Offer",
             "description": "New description",
@@ -125,7 +125,7 @@ class OfferApiTests(APITestCase):
         Expects status 403 FORBIDDEN.
         """
         self.client.login(username='customeruser', password='pass1234')
-        url = reverse('offerslist')
+        url = reverse('offers:offerslist')
         payload = {
             "title": "Not Allowed",
             "description": "Customer not allowed",
@@ -140,7 +140,7 @@ class OfferApiTests(APITestCase):
         Expects status 200 OK and correct offer data returned.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('singleoffer', kwargs={'id': self.offer.id})
+        url = reverse('offers:singleoffer', kwargs={'id': self.offer.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.offer.id)
@@ -151,7 +151,7 @@ class OfferApiTests(APITestCase):
         Expects status 200 OK and correct modification of fields.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('singleoffer', kwargs={'id': self.offer.id})
+        url = reverse('offers:singleoffer', kwargs={'id': self.offer.id})
         payload = {
             "title": "Changed Title",
             "details": [
@@ -189,7 +189,7 @@ class OfferApiTests(APITestCase):
         Expects status 403 FORBIDDEN.
         """
         self.client.login(username='customeruser', password='pass1234')
-        url = reverse('singleoffer', kwargs={'id': self.offer.id})
+        url = reverse('offers:singleoffer', kwargs={'id': self.offer.id})
         payload = {"title": "Attempted Change"}
         response = self.client.patch(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -200,7 +200,7 @@ class OfferApiTests(APITestCase):
         Expects status 204 NO CONTENT and that the offer no longer exists.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('singleoffer', kwargs={'id': self.offer.id})
+        url = reverse('offers:singleoffer', kwargs={'id': self.offer.id})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Offer.objects.filter(id=self.offer.id).exists())
@@ -211,7 +211,7 @@ class OfferApiTests(APITestCase):
         Expects status 403 FORBIDDEN.
         """
         self.client.login(username='customeruser', password='pass1234')
-        url = reverse('singleoffer', kwargs={'id': self.offer.id})
+        url = reverse('offers:singleoffer', kwargs={'id': self.offer.id})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -221,7 +221,7 @@ class OfferApiTests(APITestCase):
         Expects status 200 OK and correct detail data returned.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('offerdetails', kwargs={'id': self.detail1.id})
+        url = reverse('offerdetails:offerdetails', kwargs={'id': self.detail1.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.detail1.id)
@@ -233,6 +233,6 @@ class OfferApiTests(APITestCase):
         Expects status 404 NOT FOUND.
         """
         self.client.login(username='businessuser', password='pass1234')
-        url = reverse('offerdetails', kwargs={'id': 999999})
+        url = reverse('offerdetails:offerdetails', kwargs={'id': 999999})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

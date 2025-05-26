@@ -1,49 +1,42 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import get_object_or_404
 
 from ..models import Review
 from .serializer import ReviewSerializer
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def reviews_list(request):
-    """
-    Lists all reviews or creates a new review.
 
+class ReviewListCreateView(ListCreateAPIView):
+    """
     GET:
         - Optional filtering by business_user_id and/or reviewer_id.
-        - Optional ordering by rating or updated_at (ascending or descending).
-        - Returns the filtered and ordered reviews.
-
+        - Optional ordering by rating or updated_at.
     POST:
-        - Creates a new review.
-        - The logged-in user is automatically set as the 'reviewer'.
-        - Validates incoming data and saves the review.
+        - Creates a new review with the logged-in user as reviewer.
     """
-    if request.method == 'GET':
-        reviews = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
 
-        business_user_id = request.GET.get('business_user_id')
-        reviewer_id = request.GET.get('reviewer_id')
-        ordering = request.GET.get('ordering')
+    def get_queryset(self):
+        queryset = Review.objects.all()
+        business_user_id = self.request.GET.get('business_user_id')
+        reviewer_id = self.request.GET.get('reviewer_id')
+        ordering = self.request.GET.get('ordering')
 
         if business_user_id:
-            reviews = reviews.filter(business_user_id=business_user_id)
-
+            queryset = queryset.filter(business_user_id=business_user_id)
         if reviewer_id:
-            reviews = reviews.filter(reviewer_id=reviewer_id)
+            queryset = queryset.filter(reviewer_id=reviewer_id)
 
-        allowed_ordering_fields = ['rating', '-rating', 'updated_at', '-updated_at']
+        allowed_ordering = ['rating', '-rating', 'updated_at', '-updated_at']
+        if ordering in allowed_ordering:
+            queryset = queryset.order_by(ordering)
 
-        if ordering in allowed_ordering_fields:
-            reviews = reviews.order_by(ordering)
+        return queryset
 
-        serializer = ReviewSerializer(reviews, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
+    def create(self, request, *args, **kwargs):
         if hasattr(request.user, 'profile') and request.user.profile.user_type == 'business':
             return Response(
                 {'detail': 'Business users are not allowed to create reviews.'},
@@ -52,8 +45,7 @@ def reviews_list(request):
 
         data = request.data.copy()
         data['reviewer'] = request.user.id
-
-        serializer = ReviewSerializer(data=data)
+        serializer = self.get_serializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -61,45 +53,26 @@ def reviews_list(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def review_detail(request, id):
+class ReviewDetailView(RetrieveUpdateDestroyAPIView):
     """
-    Retrieves, updates, or deletes a single review.
-
-    GET:
-        - Returns the review with the specified ID.
-
-    PATCH:
-        - Partially updates the review.
-        - Only the creator (reviewer) may edit the review.
-
-    DELETE:
-        - Deletes the review.
-        - Only the creator (reviewer) may delete.
+    GET: Holt die Details einer Review.
+    PATCH: Nur der Reviewer darf aktualisieren.
+    DELETE: Nur der Reviewer darf löschen.
     """
-    try:
-        review = Review.objects.get(pk=id)
-    except Review.DoesNotExist:
-        return Response({'error': 'Review not found'}, status=status.HTTP_404_NOT_FOUND)
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
 
-    if request.method == 'GET':
-        serializer = ReviewSerializer(review)
-        return Response(serializer.data)
+    def get_object(self):
+        return get_object_or_404(Review, pk=self.kwargs['id'])
 
-    if review.reviewer != request.user:
-        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    def patch(self, request, *args, **kwargs):
+        review = self.get_object()
+        if review.reviewer != request.user:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
 
-    if request.method == 'PATCH':
-        serializer = ReviewSerializer(review, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        review.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request, *args, **kwargs):
+        review = self.get_object()
+        if review.reviewer != request.user:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        return super().delete(request, *args, **kwargs)

@@ -16,13 +16,13 @@ class UserProfile(models.Model):
     ]
 
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default=CUSTOMER)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    tel = models.CharField(max_length=15, blank=True)  
+    first_name = models.CharField(max_length=100, default="")
+    last_name = models.CharField(max_length=100, default="")
+    tel = models.CharField(max_length=15, blank=True,default="")  
     location = models.TextField(blank=True, default="")           
-    description = models.TextField(blank=True, null=True)         
-    working_hours = models.TextField(blank=True, null=True)      
-    file = models.ImageField(upload_to='profiles/', null=True, blank=True)
+    description = models.TextField(blank=True, default="")         
+    working_hours = models.TextField(blank=True, default="")      
+    file = models.ImageField(upload_to='profiles/', blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

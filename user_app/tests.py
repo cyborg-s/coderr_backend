@@ -50,7 +50,7 @@ class UserProfileAPITest(APITestCase):
         Tests that an authenticated customer can retrieve their own profile.
         """
         self.authenticate(self.customer_token)
-        url = reverse('userprofile', args=[self.customer_user.id])
+        url = reverse('userprofile:userprofile', args=[self.customer_user.id])
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -61,7 +61,7 @@ class UserProfileAPITest(APITestCase):
         Tests that an authenticated customer can modify their own profile.
         """
         self.authenticate(self.customer_token)
-        url = reverse('userprofile', args=[self.customer_user.id])
+        url = reverse('userprofile:userprofile', args=[self.customer_user.id])
         data = {'first_name': 'Geändert'}
         response = self.client.patch(url, data, format='json')
 
@@ -74,7 +74,7 @@ class UserProfileAPITest(APITestCase):
         """
         Tests that an unauthenticated PATCH request is rejected.
         """
-        url = reverse('userprofile', args=[self.customer_user.id])
+        url = reverse('userprofile:userprofile', args=[self.customer_user.id])
         data = {'first_name': 'KeinZugang'}
         response = self.client.patch(url, data, format='json')
 
@@ -85,7 +85,7 @@ class UserProfileAPITest(APITestCase):
         Tests the case when a user attempts to retrieve a non-existent profile.
         """
         self.authenticate(self.customer_token)
-        url = reverse('userprofile', args=[999])
+        url = reverse('userprofile:userprofile', args=[999])
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -95,21 +95,21 @@ class UserProfileAPITest(APITestCase):
         Tests retrieving all business profiles.
         """
         self.authenticate(self.business_token)
-        url = reverse('businessprofiles')
+        url = reverse('userprofiles:businessprofiles')
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['type'], 'business')
+        self.assertEqual(response.data['results'][0]['type'], 'business')
 
     def test_get_all_customer_profiles(self):
         """
         Tests retrieving all customer profiles.
         """
         self.authenticate(self.customer_token)
-        url = reverse('customerprofiles')
+        url = reverse('userprofiles:customerprofiles')
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['type'], 'customer')
+        self.assertEqual(response.data['results'][0]['type'], 'customer')
