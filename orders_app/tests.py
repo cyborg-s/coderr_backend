@@ -47,7 +47,7 @@ class OrderAPITestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Kunde soll seine eigenen Orders sehen
-        self.assertTrue(any(order['id'] == self.order.id for order in response.data['results']))
+        self.assertTrue(any(order['id'] == self.order.id for order in response.data))
 
     def test_order_list_as_business(self):
         self.client.login(username='business', password='pass123')
@@ -55,7 +55,7 @@ class OrderAPITestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Business soll Orders für seine Offers sehen
-        self.assertTrue(any(order['id'] == self.order.id for order in response.data['results']))
+        self.assertTrue(any(order['id'] == self.order.id for order in response.data))
 
     def test_create_order_as_customer(self):
         self.client.login(username='customer', password='pass123')

@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.renderers import JSONRenderer
 from django.db.models import Min, Max
 from rest_framework import status, generics
 from rest_framework.exceptions import PermissionDenied
@@ -50,10 +51,13 @@ class OfferListView(generics.ListCreateAPIView):
         annotated_min_price=Min('details__price'),
         annotated_min_delivery_time=Min('details__delivery_time_in_days')
     )
+    serializer_class = OfferListSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = OfferFilter
     search_fields = ['title', 'description']
     ordering_fields = ['updated_at', 'min_price', 'max_price']
+    pagination_class = StandardResultsSetPagination
+    
 
     def get_queryset(self):
         return super().get_queryset().annotate(
@@ -83,12 +87,12 @@ class OfferListView(generics.ListCreateAPIView):
 
         serializer.save(user=user)
 
+    def get_paginated_response(self, data):
+        """Optional: Falls du GET & POST unterschiedlich behandeln willst."""
+        if self.request.method == 'POST':
+            return Response(data)
+        return super().get_paginated_response(data)
 
-    def paginate_queryset(self, queryset):
-        if self.request.method == 'GET':
-            paginator = StandardResultsSetPagination()
-            return paginator.paginate_queryset(queryset, self.request, view=self)
-        return None
 
 
 

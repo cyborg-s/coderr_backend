@@ -100,7 +100,7 @@ class UserProfileAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
-        self.assertEqual(response.data['results'][0]['type'], 'business')
+        self.assertEqual(response.data[0]['type'], 'business')
 
     def test_get_all_customer_profiles(self):
         """
@@ -112,4 +112,4 @@ class UserProfileAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
-        self.assertEqual(response.data['results'][0]['type'], 'customer')
+        self.assertEqual(response.data[0]['type'], 'customer')

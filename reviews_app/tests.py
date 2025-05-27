@@ -46,7 +46,7 @@ class ReviewTests(APITestCase):
         response = self.client.get(url, {'business_user_id': self.business_user.id})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['results'][0]['business_user'], self.business_user.id)
+        self.assertEqual(response.data[0]['business_user'], self.business_user.id)
 
     def test_create_review_success(self):
         """

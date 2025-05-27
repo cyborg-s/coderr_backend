@@ -42,7 +42,7 @@ class OrderListCreateView(ListCreateAPIView):
         try:
             offer_detail = OfferDetail.objects.get(pk=offer_detail_id)
         except (OfferDetail.DoesNotExist, ValueError):
-            return Response({'error': 'OfferDetail not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'OfferDetail not found'}, status=status.HTTP_400_BAD_REQUEST)
 
         order = Order.objects.create(
             business_user=offer_detail.offer.user,
