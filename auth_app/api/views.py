@@ -22,6 +22,7 @@ class RegistrationView(APIView):
     """
 
     permission_classes = [AllowAny]
+    pagination_class = None
 
     def post(self, request):
         """
@@ -77,6 +78,7 @@ class LoginView(APIView):
     """
 
     permission_classes = [AllowAny]
+    pagination_class = None
 
     def post(self, request):
         """

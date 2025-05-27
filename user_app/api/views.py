@@ -15,6 +15,7 @@ class UserProfileView(RetrieveUpdateAPIView):
     """
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_object(self):
         profile = get_object_or_404(UserProfile, user_id=self.kwargs['pk'])
@@ -33,6 +34,7 @@ class BusinessProfilesView(ListAPIView):
     """
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return UserProfile.objects.filter(user_type=UserProfile.BUSINESS)
@@ -44,6 +46,7 @@ class CustomerProfilesView(ListAPIView):
     """
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return UserProfile.objects.filter(user_type=UserProfile.CUSTOMER)

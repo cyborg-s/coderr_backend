@@ -25,6 +25,7 @@ class BaseInfoView(APIView):
         - Publicly accessible (no authentication required).
     """
     permission_classes = [AllowAny]
+    pagination_class = None
 
     def get(self, request):
         """

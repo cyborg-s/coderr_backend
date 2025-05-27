@@ -22,7 +22,7 @@ class UserProfile(models.Model):
     location = models.TextField(blank=True, default="")           
     description = models.TextField(blank=True, default="")         
     working_hours = models.TextField(blank=True, default="")      
-    file = models.ImageField(upload_to='profiles/', blank=True, default="")
+    file = models.ImageField(upload_to='profiles/', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

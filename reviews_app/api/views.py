@@ -18,6 +18,7 @@ class ReviewListCreateView(ListCreateAPIView):
     """
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         queryset = Review.objects.all()
@@ -61,6 +62,7 @@ class ReviewDetailView(RetrieveUpdateDestroyAPIView):
     """
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_object(self):
         return get_object_or_404(Review, pk=self.kwargs['id'])

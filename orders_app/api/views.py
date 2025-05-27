@@ -18,6 +18,7 @@ class OrderListCreateView(ListCreateAPIView):
     """
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
@@ -66,6 +67,7 @@ class OrderDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def patch(self, request, *args, **kwargs):
         order = self.get_object()
@@ -91,6 +93,7 @@ class OrderCountView(APIView):
     Gibt die Anzahl der Bestellungen mit Status 'in_progress' für einen Business-User zurück.
     """
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get(self, request, business_user):
         try:
@@ -107,6 +110,7 @@ class CompletedOrderCountView(APIView):
     Gibt die Anzahl der abgeschlossenen Bestellungen für einen Business-User zurück.
     """
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get(self, request, business_user):
         try:

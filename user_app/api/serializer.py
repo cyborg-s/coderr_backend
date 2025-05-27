@@ -28,6 +28,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     type = serializers.CharField(source='user_type')
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.CharField(source="user.email")
+    file = serializers.SerializerMethodField()
+
+    def get_file(self, obj):
+        if obj.file:
+            return obj.file.url
+        return ""  # statt null
 
     class Meta:
         model = UserProfile
@@ -56,5 +62,4 @@ class UserProfileSerializer(serializers.ModelSerializer):
         for attr, value in user_data.items():
             setattr(user, attr, value)
         user.save()
-
         return instance

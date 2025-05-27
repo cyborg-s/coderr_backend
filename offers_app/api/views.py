@@ -27,6 +27,7 @@ class OfferDetailRetrieveView(generics.RetrieveAPIView):
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSerializer
     permission_classes = [AllowAny]
+    pagination_class = None
     lookup_field = 'id'
 
 
@@ -39,19 +40,16 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 
+
 class OfferListView(generics.ListCreateAPIView):
     """
-    GET /api/offers/
-    Lists all offers with filters, search, ordering, and pagination.
-
-    POST /api/offers/
-    Creates a new offer (only allowed for authenticated business users).
+    GET /api/offers/ - Lists offers with pagination
+    POST /api/offers/ - Creates a new offer without pagination
     """
     queryset = Offer.objects.all().prefetch_related('details', 'user').annotate(
         annotated_min_price=Min('details__price'),
         annotated_min_delivery_time=Min('details__delivery_time_in_days')
     )
-    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = OfferFilter
     search_fields = ['title', 'description']
@@ -86,12 +84,21 @@ class OfferListView(generics.ListCreateAPIView):
         serializer.save(user=user)
 
 
+    def paginate_queryset(self, queryset):
+        if self.request.method == 'GET':
+            paginator = StandardResultsSetPagination()
+            return paginator.paginate_queryset(queryset, self.request, view=self)
+        return None
+
+
+
 class SingleOfferView(APIView):
     """
     Handles GET, PATCH, and DELETE for a single Offer instance.
     Permissions: Only the creator can PATCH or DELETE.
     """
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_object(self, id):
         try:
